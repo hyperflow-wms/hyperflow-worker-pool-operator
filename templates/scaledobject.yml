@@ -1,0 +1,36 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {poolName}
+  namespace: {namespace}
+  labels:
+    name: {poolName}
+spec:
+  scaleTargetRef:
+    name: {poolName}
+  pollingInterval: 3
+  cooldownPeriod:  120
+  minReplicaCount: {minReplicaCount}
+  maxReplicaCount: {maxReplicaCount}
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus-operated.default:9090
+        metricName: {poolNameUnderscored}:replication_factor
+        threshold: '1'
+        query: {poolNameUnderscored}:replication_factor{{}}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - periodSeconds: 5
+              type: Pods
+              value: 50
+        scaleDown:
+          stabilizationWindowSeconds: 0
+          policies:
+            - periodSeconds: 30
+              type: Pods
+              value: 50

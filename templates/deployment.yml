@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {poolName}
+  namespace: {namespace}
+  labels:
+    app: {poolName}
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: {poolName}
+  template:
+    metadata:
+      labels:
+        app: {poolName}
+    spec:
+      terminationGracePeriodSeconds: 300
+      nodeSelector:
+        node-role.kubernetes.io/hfworker: hfworker
+      containers:
+        - name: worker
+          image: {image}
+          command:
+            - /usr/local/bin/dumb-init
+            - --single-child
+            - -v
+            - --
+            - hflow-job-listener.js
+          env:
+            - name: QUEUE_NAME
+              value: {queueName}
+            - name: RABBIT_HOSTNAME
+              value: rabbitmq.default
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: RABBIT_PREFETCH_SIZE
+              value: '1'
+            - name: HF_VAR_WORK_DIR
+              value: /work_dir
+            - name: HF_VAR_WAIT_FOR_INPUT_FILES
+              value: "0"
+            - name: HF_VAR_NUM_RETRIES
+              value: "1"
+            - name: HF_LOG_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: HF_LOG_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: HF_LOG_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: HF_LOG_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: HF_LOG_POD_SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.serviceAccountName
+            - name: HF_VAR_FS_MONIT_ENABLED
+              value: "0"
+            - name: HF_VAR_FS_MONIT_COMMAND
+              value: hflow-job-execute $REDIS_URL -a -- 'Gjt5YxVCa:1:5:1' 'Gjt5YxVCa:1:6:1'
+            - name: HF_VAR_FS_MONIT_PATH_PATTERN
+              value: /work_dir/*
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: {cpuRequests}
+              memory: {memoryRequests}
+#            limits:
+#              cpu: {cpuLimits}
+#              memory: {memoryLimits}
+          volumeMounts:
+            - mountPath: /work_dir
+              name: my-pvc-nfs
+          workingDir: /work_dir
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+      volumes:
+        - name: my-pvc-nfs
+          persistentVolumeClaim:
+            claimName: nfs

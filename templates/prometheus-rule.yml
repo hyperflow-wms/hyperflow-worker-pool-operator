@@ -1,0 +1,34 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {poolName}
+  namespace: {namespace}
+  labels:
+    prometheus: kube-prometheus # This label is configured as port of the installation of the prometheus operator
+    release: monitoring
+spec:
+  groups:
+    - name: "{poolName}-replication-factor" # Define the name of your rule
+      interval: 3s
+      rules:
+        - record: {poolNameUnderscored}:replication_factor # The name of the metrics you want
+          expr: |
+            ceil(  
+              sum(
+                (
+                  rabbitmq_queue_messages_ready{{job="amqp-metrics", queue="{queueName}"}}
+                  + 
+                  rabbitmq_queue_messages_unacknowledged{{job="amqp-metrics", queue="{queueName}"}}
+                ) or vector(0)
+              )
+              / sum(last_over_time(rabbitmq_queue_messages_total{{job="amqp-metrics"}}[15s]) or vector(1))
+              *
+              min(
+                floor(kube_resourcequota{{namespace="{namespace}", resource="requests.cpu", type="hard"}} / {cpuLimits}) 
+                or
+                floor(kube_resourcequota{{namespace="{namespace}", resource="requests.memory", type="hard"}} / {memoryLimits})
+              )
+            )
+          labels:
+            namespace: default
+            service: {poolName} # Name of the service you are going to configure your HPA with
