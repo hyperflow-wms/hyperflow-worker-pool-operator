@@ -4,14 +4,14 @@ metadata:
   name: {poolName}
   namespace: {namespace}
   labels:
-    prometheus: kube-prometheus # This label is configured as port of the installation of the prometheus operator
+    prometheus: kube-prometheus
     release: monitoring
 spec:
   groups:
-    - name: "{poolName}-replication-factor" # Define the name of your rule
+    - name: "{poolName}-replication-factor"
       interval: 3s
       rules:
-        - record: {poolNameUnderscored}:replication_factor # The name of the metrics you want
+        - record: {poolNameUnderscored}:replication_factor
           expr: |
             ceil(  
               sum(
@@ -31,4 +31,4 @@ spec:
             )
           labels:
             namespace: default
-            service: {poolName} # Name of the service you are going to configure your HPA with
+            service: {poolName}

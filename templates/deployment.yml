@@ -6,7 +6,7 @@ metadata:
   labels:
     app: {poolName}
 spec:
-  replicas: 0
+  replicas: {minReplicas}
   selector:
     matchLabels:
       app: {poolName}
@@ -31,9 +31,9 @@ spec:
             - name: QUEUE_NAME
               value: {queueName}
             - name: RABBIT_HOSTNAME
-              value: rabbitmq.default
+              value: {rabbitHostname}
             - name: REDIS_URL
-              value: redis://redis:6379
+              value: {redisUrl}
             - name: RABBIT_PREFETCH_SIZE
               value: '1'
             - name: HF_VAR_WORK_DIR
@@ -78,9 +78,6 @@ spec:
             requests:
               cpu: {cpuRequests}
               memory: {memoryRequests}
-#            limits:
-#              cpu: {cpuLimits}
-#              memory: {memoryLimits}
           volumeMounts:
             - mountPath: /work_dir
               name: my-pvc-nfs
