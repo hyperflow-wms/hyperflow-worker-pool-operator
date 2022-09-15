@@ -18,6 +18,7 @@ class WorkerPool:
         self.image = spec['image']
         self.rabbitHostname = spec['rabbitHostname']
         self.redisUrl = spec['redisUrl']
+        self.prometheusUrl = spec["prometheusUrl"]
         self.cpu_requests = spec['initialResources']['requests']['cpu']
         self.memory_requests = spec['initialResources']['requests']['memory']
         self.queue_name = self.namespace + '.' + spec['taskType']
@@ -198,6 +199,7 @@ def parse_scaledobject_template(worker_pool):
         template = file.read().format(poolName=worker_pool.name,
                                       namespace=worker_pool.namespace,
                                       queueName=worker_pool.queue_name,
+                                      prometheusUrl=worker_pool.prometheusUrl,
                                       poolNameUnderscored=worker_pool.name.replace('-', '_'),
                                       minReplicaCount=worker_pool.min_replica_count)
         scaledobject = yaml.safe_load(template)

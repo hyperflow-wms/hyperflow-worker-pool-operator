@@ -14,7 +14,7 @@ spec:
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://prometheus-operated.default:9090
+        serverAddress: {prometheusUrl}
         metricName: {poolNameUnderscored}:replication_factor
         threshold: '1'
         query: {poolNameUnderscored}:replication_factor{{}}
